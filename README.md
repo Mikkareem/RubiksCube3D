@@ -7,6 +7,18 @@ The application focuses on performance, graphics programming, and seamless integ
 
 ---
 
+## Demo
+
+![Untitled](https://github.com/user-attachments/assets/e43439a3-15a1-4c67-9150-e15b7146b3cf)
+
+
+https://github.com/user-attachments/assets/92bd78e4-1e2d-41f4-b363-008370584c10
+
+
+<!-- https://github.com/user-attachments/assets/c161c6bd-f52c-47a8-a76b-a31460d13c54 -->
+
+---
+
 ## ✨ Features
 
 - Fully interactive 3D Rubik’s Cube with real-time rotations
