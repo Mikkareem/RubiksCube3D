@@ -198,8 +198,10 @@ private fun CircularLayout(
             it.measure(constraints.copy(minWidth = 0, minHeight = 0))
         }
 
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
+        val maxMinDimension = minOf(constraints.maxWidth, constraints.maxHeight)
+
+        val width = maxMinDimension
+        val height = maxMinDimension
 
         val centerX = width / 2
         val centerY = height / 2

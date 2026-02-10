@@ -8,10 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,11 +31,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -57,45 +60,59 @@ fun GameScreen() {
 
     val isSolved by game.gameState.collectAsStateWithLifecycle()
 
-    Column(
+    var surfaceView by remember {
+        mutableStateOf<RubiksCubeGameView?>(null)
+    }
+
+    Layout(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-    ) {
-        var surfaceView by remember {
-            mutableStateOf<RubiksCubeGameView?>(null)
-        }
+            .padding(32.dp),
+        content = {
+            GameView(
+                onView = { surfaceView = it },
+                onResetView = { surfaceView = it },
+                onReleaseView = { surfaceView = null }
+            )
 
-        GameView(
-            onView = { surfaceView = it },
-            onResetView = { surfaceView = it },
-            onReleaseView = { surfaceView = null },
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-        )
-
-        GameControlsView(
-            isSolved = isSolved,
-            onRotateCameraX = { surfaceView?.rotateCameraX(it) },
-            onRotateCameraY = { surfaceView?.rotateCameraY(it) },
-            onRotateCameraZ = { surfaceView?.rotateCameraZ(it) },
-            onTurn = {
-                surfaceView?.turn(it)
-            },
-            onAnimatedTurn = { move, value ->
-                surfaceView?.animateTurn(move, value)
-            },
-            onScramble = {
-                scrambleMoves.forEach {
+            GameControlsView(
+                isSolved = isSolved,
+                onRotateCameraX = { surfaceView?.rotateCameraX(it) },
+                onRotateCameraY = { surfaceView?.rotateCameraY(it) },
+                onRotateCameraZ = { surfaceView?.rotateCameraZ(it) },
+                onTurn = {
                     surfaceView?.turn(it)
+                },
+                onAnimatedTurn = { move, value ->
+                    surfaceView?.animateTurn(move, value)
+                },
+                onScramble = {
+                    scrambleMoves.forEach {
+                        surfaceView?.turn(it)
+                    }
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(32.dp)
+            )
+        }
+    ) { measurables, constraints ->
+
+        val gameControlsPlaceable =
+            measurables[1].measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+        val gameViewConstraints = Constraints.fixed(
+            width = constraints.maxWidth,
+            height = minOf(
+                constraints.maxWidth,
+                constraints.maxHeight - gameControlsPlaceable.height
+            )
         )
+
+        val gameViewPlaceable = measurables[0].measure(gameViewConstraints)
+
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            gameViewPlaceable.place(0, 0)
+            gameControlsPlaceable.place(0, gameViewPlaceable.height)
+        }
     }
 }
 
@@ -126,19 +143,22 @@ private fun GameControlsView(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier
     ) {
         AnimatedVisibility(isSolved) {
-            GameState(
-                onScramble = onScramble
-            )
+            Column {
+                GameState(
+                    onScramble = onScramble
+                )
+                Spacer(Modifier.height(32.dp))
+            }
         }
         CameraGears(
             onRotateCameraX = onRotateCameraX,
             onRotateCameraY = onRotateCameraY,
-            onRotateCameraZ = onRotateCameraZ,
+            onRotateCameraZ = onRotateCameraZ
         )
+        Spacer(Modifier.height(48.dp))
         ControlPanel(
             onTurn = onTurn,
             onAnimatedTurn = onAnimatedTurn
@@ -148,10 +168,11 @@ private fun GameControlsView(
 
 @Composable
 private fun GameState(
-    onScramble: () -> Unit
+    onScramble: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(26f))
             .background(accentGreenColor)
@@ -317,7 +338,7 @@ private fun ControlsPreview() {
         )
 
         GameControlsView(
-            isSolved = false,
+            isSolved = true,
             onRotateCameraX = {},
             onRotateCameraY = {},
             onRotateCameraZ = {},
